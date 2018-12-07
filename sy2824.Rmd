@@ -5,24 +5,84 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(plotly)
 ```
 
 ## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+cancer_df = read_csv("./data/Cancer_Registry.csv") %>% 
+  janitor::clean_names() %>% 
+  select(target_death_rate, everything()) %>% 
+  separate(geography, c("county", "state"), sep = ",") %>% 
+  mutate(county = as.factor(county), 
+         state = as.factor(state),
+         pct_case_count = avg_ann_count / pop_est2015) %>% 
+  select(target_death_rate, pct_case_count, everything())
+  
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+Percentage of annul case dignosed count plot
+```{r}
+plot_count_pct =
+  cancer_df %>% 
+  ggplot(aes(y = pct_case_count, x = target_death_rate, color = state)) +
+  geom_point() 
+  #geom_smooth(se = F)
+ggplotly(plot_count_pct)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Incidence rate plot
+```{r}
+plot_incidence = 
+  cancer_df %>% 
+  ggplot(aes(x = incidence_rate, y = target_death_rate, color = state)) +
+  geom_point() 
+  #geom_smooth(se = F)
+  ggplotly(plot_incidence)
+  
+# Influential points in the dataset, state Flordia and Virginia.
+```
+
+Income plot
+```{r}
+plot_income = 
+  cancer_df %>% 
+  ggplot(aes(x = med_income, y = target_death_rate, color = state)) +
+  geom_point() 
+  #geom_smooth(se = F)
+  ggplotly(plot_income)
+```
+
+Age plots
+```{r}
+plot_age_1 =
+  cancer_df %>% 
+  ggplot(aes(x = median_age, y = target_death_rate)) +
+  geom_point() +
+  geom_smooth(se = F)
+ggplotly(plot_age_1)
+# error data in this column, larger than 100
+
+plot_age_2 =
+  cancer_df %>% 
+  ggplot(aes(x = median_age_male, y = target_death_rate)) +
+  geom_point() +
+  geom_smooth(se = F)
+ggplotly(plot_age_2)
+
+plot_age_3 =
+  cancer_df %>% 
+  ggplot(aes(x = median_age_female, y = target_death_rate)) +
+  geom_point() +
+  geom_smooth(se = F)
+ggplotly(plot_age_3)
+```
+
+```{r}
+cancer_df %>% 
+  select(-county, -state, -binned_inc) %>% 
+  cor() %>% 
+  as.tibble() 
+```
+
