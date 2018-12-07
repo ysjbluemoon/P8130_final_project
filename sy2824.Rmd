@@ -9,7 +9,7 @@ library(tidyverse)
 library(plotly)
 ```
 
-## R Markdown
+## Exploratory of variables
 ```{r}
 cancer_df = read_csv("./data/Cancer_Registry.csv") %>% 
   janitor::clean_names() %>% 
@@ -63,6 +63,11 @@ plot_age_1 =
   geom_smooth(se = F)
 ggplotly(plot_age_1)
 # error data in this column, larger than 100
+
+cancer_df %>%
+  filter(median_age < 100) %>% 
+  ggplot(aes(x = median_age_female)) +
+  geom_histogram()
 
 plot_age_2 =
   cancer_df %>% 
