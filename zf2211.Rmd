@@ -1,0 +1,128 @@
+---
+title: "zf2211"
+author: "Francis"
+date: "12/5/2018"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(readr)
+
+```
+
+```{r}
+cancer_registry <- 
+  read.csv("./data/Cancer_Registry.csv") %>% 
+  as.tibble()
+
+names(cancer_registry)
+```
+
+
+Education data
+
+```{r}
+education_raw <- 
+  cancer_registry %>% 
+  select(TARGET_deathRate, PctNoHS18_24:PctBachDeg25_Over)
+summary(education_raw)
+
+```
+
+
+
+```{r}
+
+output = vector("list", length = 7)
+
+for (i in 1:7) {
+  output[[i]] = sum(as.numeric(is.na(education_raw[[i]])))
+}
+```
+So we omit the col `PctSomeCol18_24` for too many NAs
+
+
+
+
+
+```{r}
+
+```
+
+First glance
+```{r}
+education <- 
+  education_raw %>% 
+  select(-PctSomeCol18_24)
+plot(education)
+head(education)
+```
+
+
+
+
+
+Function to plot relation seperately
+```{r}
+#relationship <- function(i){
+#  ggplot(education, aes(x = i, y = TARGET_deathRate)) + 
+#    geom_point()
+#}
+```
+
+
+```{r}
+#output = list()
+
+#for (i in 2:6) {
+#  output[[i]] = 
+#  relationship(education[[i]])
+#}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+#cancer_registry %>% 
+#  ggplot(avgDeathsPerYear, incidenceRate) +
+#  geom_point()
+  
+```
+
+
+
+```{r}
+#cancer_registry_mlr <- cancer_registry %>% 
+#  glm(TARGET_deathRate ~ . - binnedInc-Geography, data = . ) 
+
+
+
+```
+
+
+
+
+```{r}
+#cancer_registry_step <- 
+#  step(cancer_registry_mlr)
+
+
+
+
+```
+
+```{r}
+#education %>% 
+#  lm(TARGET_)
+```
+
