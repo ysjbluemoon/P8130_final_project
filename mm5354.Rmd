@@ -1,0 +1,86 @@
+---
+title: "mm5354"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(patchwork)
+```
+
+
+```{r}
+raw_data <- read_csv("./Data/Cancer_Registry.csv")
+raw_data = janitor::clean_names(raw_data)
+raw_data1 = raw_data %>% 
+  select(-binned_inc, -geography)
+
+res <- cor(raw_data1)
+round(res, 3)
+```
+
+```{r}
+summary(raw_data1$pct_employed16_over) # contains 152 NA's
+summary(raw_data1$pct_unemployed16_over)
+summary(raw_data1$pct_private_coverage)
+summary(raw_data1$pct_private_coverage_alone) # get rid of this variable! Contains 609 NA's
+summary(raw_data1$pct_emp_priv_coverage)
+summary(raw_data1$pct_public_coverage)
+summary(raw_data1$pct_public_coverage_alone)
+
+histogram1 = ggplot(raw_data1, aes(x  = raw_data1$pct_employed16_over)) + geom_histogram() + labs(title = "Percent ages 16+ employed")
+
+
+histogram2 = ggplot(raw_data1, aes(x  = raw_data1$pct_unemployed16_over)) + geom_histogram() + labs(title = "Percent ages 16+ unemployed")
+
+
+histogram3 = ggplot(raw_data1, aes(x  = raw_data1$pct_private_coverage)) + geom_histogram() + labs(title = "Percent private health coverage")
+
+
+histogram4 = ggplot(raw_data1, aes(x  = raw_data1$pct_private_coverage_alone)) + geom_histogram() + labs(title = "Percent private health coverage alone")
+
+
+histogram5 = ggplot(raw_data1, aes(x  = raw_data1$pct_emp_priv_coverage)) + geom_histogram() + labs(title = "Percent employee-provided private health coverage")
+
+
+histogram6 = ggplot(raw_data1, aes(x  = raw_data1$pct_public_coverage)) + geom_histogram() + labs(title = "Percent government-provided health coverage")
+
+
+histogram7 = ggplot(raw_data1, aes(x  = raw_data1$pct_public_coverage_alone)) + geom_histogram() + labs(title = "Percent government-provided health coverage alone")
+
+
+
+(histogram1 + histogram2)
+(histogram3 + histogram4)
+(histogram5 + histogram6)/(histogram7)
+
+reg1 = lm(target_death_rate~pct_employed16_over, data = raw_data1)
+reg2 = lm(target_death_rate~pct_unemployed16_over, data = raw_data1)
+reg3 = lm(target_death_rate~pct_private_coverage, data = raw_data1)
+reg4 = lm(target_death_rate~pct_private_coverage_alone, data = raw_data1)
+reg5 = lm(target_death_rate~pct_emp_priv_coverage, data = raw_data1)
+reg6 = lm(target_death_rate~pct_public_coverage, data = raw_data1)
+reg7 = lm(target_death_rate~pct_public_coverage_alone , data = raw_data1)
+
+plot(raw_data1$pct_employed16_over, raw_data1$target_death_rate)
+abline(reg1,lwd = 2,col = 2)
+plot(raw_data1$pct_unemployed16_over, raw_data1$target_death_rate)
+abline(reg2,lwd = 2,col = 2)
+plot(raw_data1$pct_private_coverage, raw_data1$target_death_rate)
+abline(reg3,lwd = 2,col = 2)
+plot(raw_data1$pct_private_coverage_alone, raw_data1$target_death_rate)
+abline(reg4,lwd = 2,col = 2)
+plot(raw_data1$pct_emp_priv_coverage, raw_data1$target_death_rate)
+abline(reg5,lwd = 2,col = 2)
+plot(raw_data1$pct_public_coverage, raw_data1$target_death_rate)
+abline(reg6,lwd = 2,col = 2)
+plot(raw_data1$pct_public_coverage_alone, raw_data1$target_death_rate)
+abline(reg7,lwd = 2,col = 2)
+
+```
+
+
