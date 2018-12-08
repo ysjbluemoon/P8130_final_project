@@ -19,7 +19,12 @@ library(broom)
 raw_data <- read_csv("./Data/Cancer_Registry.csv")
 raw_data = janitor::clean_names(raw_data)
 raw_data1 = raw_data %>% 
-  select(-binned_inc, -geography)
+  select(-binned_inc) %>% 
+  separate(geography, c("county", "state"), sep = ",") %>% 
+  mutate(county = as.factor(county), 
+         state = as.factor(state),
+         avg_ann_count = avg_ann_count / pop_est2015*100000) %>% 
+  select(target_death_rate, avg_ann_count, everything())
 
 res <- cor(raw_data1)
 round(res, 3)
@@ -97,17 +102,21 @@ raw_data2 = raw_data1 %>%
 reg = lm(target_death_rate~., data = raw_data2)
 summary(reg)
 
-# No Median income per county
-step1<-update(reg, . ~ . -med_income)
+# No Percent of county residents ages 18-24 highest education attained: bachelor's degree
+step1<-update(reg, . ~ . -pct_bach_deg18_24)
 summary(step1)
 
-# No Percent of county residents ages 18-24 highest education attained: bachelor's degree
-step2<-update(step1, . ~ . -pct_bach_deg18_24)
+# No Mean number of reported cases of cancer diagnosed annually
+step2<-update(step1, . ~ . -avg_ann_count)
 summary(step2)
 
-# No Median age of male county residents
-step3<-update(step2, . ~ . -median_age_male)
+# No 
+step3<-update(step2, . ~ . -med_income)
 summary(step3)
+
+# No 
+step4<-update(step3, . ~ . -median_age_male)
+summary(step4)
 
 
 ############################################################################
