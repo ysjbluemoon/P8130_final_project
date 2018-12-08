@@ -2,7 +2,7 @@
 title: "zf2211"
 author: "Francis"
 date: "12/5/2018"
-output: html_document
+output: github_document
 ---
 
 ```{r}
