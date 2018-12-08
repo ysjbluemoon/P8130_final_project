@@ -10,6 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 library(patchwork)
+library(faraway)
+library(broom)
 ```
 
 
@@ -82,5 +84,378 @@ plot(raw_data1$pct_public_coverage_alone, raw_data1$target_death_rate)
 abline(reg7,lwd = 2,col = 2)
 
 ```
+
+```{r}
+raw_data2 = raw_data1 %>% 
+  select(target_death_rate, avg_ann_count, incidence_rate, med_income, poverty_percent, median_age_male, median_age_female, pct_no_hs18_24, pct_hs18_24, pct_bach_deg18_24, pct_hs25_over, pct_bach_deg25_over, pct_employed16_over, pct_unemployed16_over, pct_public_coverage_alone, pct_white)
+
+#############################################################################
+# Backward elimination: take out non-significant variables 'one at a time'  #
+# starting with the highest p-value                                         #
+#############################################################################
+
+reg = lm(target_death_rate~., data = raw_data2)
+summary(reg)
+
+# No Median income per county
+step1<-update(reg, . ~ . -med_income)
+summary(step1)
+
+# No Percent of county residents ages 18-24 highest education attained: bachelor's degree
+step2<-update(step1, . ~ . -pct_bach_deg18_24)
+summary(step2)
+
+# No Median age of male county residents
+step3<-update(step2, . ~ . -median_age_male)
+summary(step3)
+
+
+############################################################################
+#  Stepwise regreession                                                    #   
+# 'Step' function uses AIC criterion for var selection and the default     #
+#  option is 'backward'.                                                   #
+#  Step is a simplified version of stepAIC()                               #
+############################################################################
+
+
+mult.fit <- lm(target_death_rate~., data = raw_data2)
+step(mult.fit, direction = 'both')
+
+#########################################################################################
+# Forward elimination: Reversed backward elimination starting with the lowest p-value   #                                                            
+#########################################################################################
+
+
+### Step 1:  Fit simple linear regressions for all variables,look for the variable with lowest p-value
+fit1 <- lm(target_death_rate ~ avg_ann_count, data=raw_data2)
+tidy(fit1)
+fit2 <- lm(target_death_rate ~ incidence_rate, data=raw_data2)
+tidy(fit2)
+fit3 <- lm(target_death_rate ~ med_income, data=raw_data2)
+tidy(fit3)
+fit4 <- lm(target_death_rate ~ poverty_percent, data=raw_data2)
+tidy(fit4)
+fit5 <- lm(target_death_rate ~ median_age_male, data=raw_data2)
+tidy(fit5)
+fit6 <- lm(target_death_rate ~ median_age_female, data=raw_data2)
+tidy(fit6)
+fit7 <- lm(target_death_rate ~ pct_no_hs18_24, data=raw_data2)
+tidy(fit7)
+fit8 <- lm(target_death_rate ~ pct_hs18_24, data=raw_data2)
+tidy(fit8)
+fit9 <- lm(target_death_rate ~ pct_bach_deg18_24, data=raw_data2)
+tidy(fit9)
+fit10 <- lm(target_death_rate ~ pct_hs25_over, data=raw_data2)
+tidy(fit10)
+fit11 <- lm(target_death_rate ~ pct_bach_deg25_over, data=raw_data2)
+tidy(fit11)
+fit12 <- lm(target_death_rate ~ pct_employed16_over, data=raw_data2)
+tidy(fit12)
+fit13 <- lm(target_death_rate ~ pct_unemployed16_over, data=raw_data2)
+tidy(fit13)
+fit14 <- lm(target_death_rate ~ pct_public_coverage_alone, data=raw_data2)
+tidy(fit14)
+fit15 <- lm(target_death_rate ~ pct_white, data=raw_data2)
+tidy(fit15)
+
+
+# Enter first the one with the lowest p-value: pct_bach_deg25_over
+forward1<-lm(target_death_rate~pct_bach_deg25_over , data=raw_data2)
+tidy(forward1)
+
+### Step 2: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward1, . ~ . +avg_ann_count)
+tidy(fit1)
+fit2 <- update(forward1, . ~ . +incidence_rate)
+tidy(fit2)
+fit3 <- update(forward1, . ~ . +med_income)
+tidy(fit3)
+fit4 <- update(forward1, . ~ . +poverty_percent)
+tidy(fit4)
+fit5 <- update(forward1, . ~ . +median_age_male)
+tidy(fit5)
+fit6 <- update(forward1, . ~ . +median_age_female)
+tidy(fit6)
+fit7 <- update(forward1, . ~ . +pct_no_hs18_24)
+tidy(fit7)
+fit8 <- update(forward1, . ~ . +pct_hs18_24)
+tidy(fit8)
+fit9 <- update(forward1, . ~ . +pct_bach_deg18_24)
+tidy(fit9)
+fit10 <- update(forward1, . ~ . +pct_hs25_over)
+tidy(fit10)
+fit11 <- update(forward1, . ~ . +pct_employed16_over)
+tidy(fit11)
+fit12 <- update(forward1, . ~ . +pct_unemployed16_over)
+tidy(fit12)
+fit13 <- update(forward1, . ~ . +pct_public_coverage_alone)
+tidy(fit13)
+fit14 <- update(forward1, . ~ . +pct_white )
+tidy(fit14)
+
+
+
+# Enter the one with the lowest p-value: incidence_rate
+forward2 <- update(forward1, . ~ . + incidence_rate)
+tidy(forward2)
+
+### Step 3: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward2, . ~ . +avg_ann_count)
+tidy(fit1)
+fit2 <- update(forward2, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward2, . ~ . +poverty_percent)
+tidy(fit3)
+fit4 <- update(forward2, . ~ . +median_age_male)
+tidy(fit4)
+fit5 <- update(forward2, . ~ . +median_age_female)
+tidy(fit5)
+fit6 <- update(forward2, . ~ . +pct_no_hs18_24)
+tidy(fit6)
+fit7 <- update(forward2, . ~ . +pct_hs18_24)
+tidy(fit7)
+fit8 <- update(forward2, . ~ . +pct_bach_deg18_24)
+tidy(fit8)
+fit9 <- update(forward2, . ~ . +pct_hs25_over)
+tidy(fit9)
+fit10 <- update(forward2, . ~ . +pct_employed16_over)
+tidy(fit10)
+fit11 <- update(forward2, . ~ . +pct_unemployed16_over)
+tidy(fit11)
+fit12 <- update(forward2, . ~ . +pct_public_coverage_alone)
+tidy(fit12)
+fit13 <- update(forward2, . ~ . +pct_white )
+tidy(fit13)
+
+# Enter the one with the lowest p-value: poverty_percent
+forward3 <- update(forward2, . ~ . + poverty_percent)
+tidy(forward3)
+
+### Step 4: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward3, . ~ . +avg_ann_count)
+tidy(fit1)
+fit2 <- update(forward3, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward3, . ~ . +median_age_male)
+tidy(fit3)
+fit4 <- update(forward3, . ~ . +median_age_female)
+tidy(fit4)
+fit5 <- update(forward3, . ~ . +pct_no_hs18_24)
+tidy(fit5)
+fit6 <- update(forward3, . ~ . +pct_hs18_24)
+tidy(fit6)
+fit7 <- update(forward3, . ~ . +pct_bach_deg18_24)
+tidy(fit7)
+fit8 <- update(forward3, . ~ . +pct_hs25_over)
+tidy(fit8)
+fit9 <- update(forward3, . ~ . +pct_employed16_over)
+tidy(fit9)
+fit10 <- update(forward3, . ~ . +pct_unemployed16_over)
+tidy(fit10)
+fit11 <- update(forward3, . ~ . +pct_public_coverage_alone)
+tidy(fit11)
+fit12 <- update(forward3, . ~ . +pct_white )
+tidy(fit12)
+
+# Enter the one with the lowest p-value: pct_hs18_24
+forward4 <- update(forward3, . ~ . + pct_hs18_24)
+tidy(forward4)
+
+
+### Step 5: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward4, . ~ . +avg_ann_count)
+tidy(fit1)
+fit2 <- update(forward4, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward4, . ~ . +median_age_male)
+tidy(fit3)
+fit4 <- update(forward4, . ~ . +median_age_female)
+tidy(fit4)
+fit5 <- update(forward4, . ~ . +pct_no_hs18_24)
+tidy(fit5)
+fit6 <- update(forward4, . ~ . +pct_bach_deg18_24)
+tidy(fit6)
+fit7 <- update(forward4, . ~ . +pct_hs25_over)
+tidy(fit7)
+fit8 <- update(forward4, . ~ . +pct_employed16_over)
+tidy(fit8)
+fit9 <- update(forward4, . ~ . +pct_unemployed16_over)
+tidy(fit9)
+fit10 <- update(forward4, . ~ . +pct_public_coverage_alone)
+tidy(fit10)
+fit11 <- update(forward4, . ~ . +pct_white )
+tidy(fit11)
+
+# Enter the one with the lowest p-value: pct_hs25_over
+forward5 <- update(forward4, . ~ . + pct_hs25_over )
+tidy(forward5)
+
+
+### Step 6: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward5, . ~ . +avg_ann_count)
+tidy(fit1)
+fit2 <- update(forward5, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward5, . ~ . +median_age_male)
+tidy(fit3)
+fit4 <- update(forward5, . ~ . +median_age_female)
+tidy(fit4)
+fit5 <- update(forward5, . ~ . +pct_no_hs18_24)
+tidy(fit5)
+fit6 <- update(forward5, . ~ . +pct_bach_deg18_24)
+tidy(fit6)
+fit7 <- update(forward5, . ~ . +pct_employed16_over)
+tidy(fit7)
+fit8 <- update(forward5, . ~ . +pct_unemployed16_over)
+tidy(fit8)
+fit9 <- update(forward5, . ~ . +pct_public_coverage_alone)
+tidy(fit9)
+fit10 <- update(forward5, . ~ . +pct_white )
+tidy(fit10)
+
+# Enter the one with the lowest p-value: pct_unemployed16_over
+forward6 <- update(forward5, . ~ . + pct_unemployed16_over )
+tidy(forward6)
+
+
+### Step 7: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward6, . ~ . +avg_ann_count)
+tidy(fit1)
+fit2 <- update(forward6, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward6, . ~ . +median_age_male)
+tidy(fit3)
+fit4 <- update(forward6, . ~ . +median_age_female)
+tidy(fit4)
+fit5 <- update(forward6, . ~ . +pct_no_hs18_24)
+tidy(fit5)
+fit6 <- update(forward6, . ~ . +pct_bach_deg18_24)
+tidy(fit6)
+fit7 <- update(forward6, . ~ . +pct_employed16_over)
+tidy(fit7)
+fit8<- update(forward6, . ~ . +pct_public_coverage_alone)
+tidy(fit8)
+fit9 <- update(forward6, . ~ . +pct_white )
+tidy(fit9)
+
+# Enter the one with the lowest p-value: median_age_male 
+forward7 <- update(forward6, . ~ . + median_age_male )
+tidy(forward7)
+
+
+### Step 8: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward7, . ~ . +avg_ann_count)
+tidy(fit1)
+fit2 <- update(forward7, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward7, . ~ . +median_age_female)
+tidy(fit3)
+fit4 <- update(forward7, . ~ . +pct_no_hs18_24)
+tidy(fit4)
+fit5 <- update(forward7, . ~ . +pct_bach_deg18_24)
+tidy(fit5)
+fit6 <- update(forward7, . ~ . +pct_employed16_over)
+tidy(fit6)
+fit7<- update(forward7, . ~ . +pct_public_coverage_alone)
+tidy(fit7)
+fit8 <- update(forward7, . ~ . +pct_white )
+tidy(fit8)
+
+# Enter the one with the lowest p-value: pct_public_coverage_alone
+forward8 <- update(forward7, . ~ . + pct_public_coverage_alone )
+tidy(forward8)
+
+
+### Step 9: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward8, . ~ . +avg_ann_count)
+tidy(fit1)
+fit2 <- update(forward8, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward8, . ~ . +median_age_female)
+tidy(fit3)
+fit4 <- update(forward8, . ~ . +pct_no_hs18_24)
+tidy(fit4)
+fit5 <- update(forward8, . ~ . +pct_bach_deg18_24)
+tidy(fit5)
+fit6 <- update(forward8, . ~ . +pct_employed16_over)
+tidy(fit6)
+fit7 <- update(forward8, . ~ . +pct_white )
+tidy(fit7)
+
+# Enter the one with the lowest p-value: avg_ann_count
+forward9 <- update(forward8, . ~ . + avg_ann_count)
+tidy(forward9)
+
+
+### Step 9: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward9, . ~ . +pct_no_hs18_24)
+tidy(fit1)
+fit2 <- update(forward9, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward9, . ~ . +median_age_female)
+tidy(fit3)
+fit4 <- update(forward9, . ~ . +pct_bach_deg18_24)
+tidy(fit4)
+fit5 <- update(forward9, . ~ . +pct_employed16_over)
+tidy(fit5)
+fit6 <- update(forward9, . ~ . +pct_white )
+tidy(fit6)
+
+# Enter the one with the lowest p-value: pct_no_hs18_24
+forward10 <- update(forward9, . ~ . + pct_no_hs18_24 )
+tidy(forward10)
+
+
+### Step 10: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward10, . ~ . +pct_white )
+tidy(fit1)
+fit2 <- update(forward10, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward10, . ~ . +median_age_female)
+tidy(fit3)
+fit4 <- update(forward10, . ~ . +pct_bach_deg18_24)
+tidy(fit4)
+fit5 <- update(forward10, . ~ . +pct_employed16_over)
+tidy(fit5)
+
+# Enter the one with the lowest p-value: pct_white
+forward11 <- update(forward10, . ~ . + pct_white )
+tidy(forward11)
+
+
+### Step 11: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward11, . ~ . +pct_employed16_over)
+tidy(fit1)
+fit2 <- update(forward11, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward11, . ~ . +median_age_female)
+tidy(fit3)
+fit4 <- update(forward11, . ~ . +pct_bach_deg18_24)
+tidy(fit4)
+
+# Enter the one with the lowest p-value: pct_employed16_over
+forward12 <- update(forward11, . ~ . + pct_employed16_over )
+tidy(forward12)
+
+
+### Step 12: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward12, . ~ . +pct_bach_deg18_24)
+tidy(fit1)
+fit2 <- update(forward12, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward12, . ~ . +median_age_female)
+tidy(fit3)
+
+
+
+
+# P-value of all new added variables are larger than 0.15, which means that they 
+# are not significant predictor, and we stop here.
+
+# The model we obtained is target_death_rate~population + murder + hs_grad + frost
+mult.fit <- lm(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_hs18_24 + pct_hs25_over + pct_unemployed16_over + median_age_male + pct_public_coverage_alone + pct_no_hs18_24 + avg_ann_count + pct_white + pct_employed16_over , data = raw_data2)
+summary(mult.fit)
+```
+
 
 
