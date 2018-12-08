@@ -17,7 +17,10 @@ cancer_df = read_csv("./data/Cancer_Registry.csv") %>%
   separate(geography, c("county", "state"), sep = ",") %>% 
   mutate(county = as.factor(county), 
          state = as.factor(state),
-         pct_case_count = avg_ann_count / pop_est2015*100000) %>% 
+         pct_case_count = avg_ann_count / pop_est2015*100000,
+         pct_hs = pct_no_hs18_24 + pct_hs18_24, 
+         pct_bach_deg = pct_bach_deg18_24 + pct_bach_deg25_over) %>%
+  filter(median_age<100) %>% 
   select(target_death_rate, pct_case_count, everything())
   
 ```
@@ -92,7 +95,7 @@ cancer_df %>%
 ```
 
 ```{r}
-lm(target_death_rate ~ avg_ann_count * pop_est2015, data = cancer_df) %>% 
+lm(target_death_rate ~  incidence_rate + med_income * pct_bach_deg25_over + pct_unemployed16_over*poverty_percent + pct_public_coverage_alone , data = cancer_df) %>% 
   summary()
 ```
 
