@@ -260,6 +260,8 @@ summary(step3)
 
 mult.fit <- lm(target_death_rate~., data = raw_data2)
 step(mult.fit, direction = 'both')
+step(mult.fit, direction = 'backward')
+step(mult.fit, direction = 'forward')
 
 #########################################################################################
 # Forward elimination: Reversed backward elimination starting with the lowest p-value   #                                                            
@@ -600,4 +602,34 @@ summary(mult.fit)
 
 
 
+
+
+
+
+
+```{r}
+raw_data <- read_csv("./data/Cancer_Registry.csv")
+raw_data = janitor::clean_names(raw_data)
+raw_data1 = raw_data %>% 
+  select(-binned_inc) %>% 
+  separate(geography, c("county", "state"), sep = ",") %>% 
+  mutate(county = as.factor(county), 
+         state = as.factor(state),
+         avg_ann_count = avg_ann_count / pop_est2015*100000) %>% 
+  select(target_death_rate, avg_ann_count, everything())
+```
+
+
+
+
+Selected 'useful' NA vatiables are: target_death_rate, -avg_ann_count, incidence_rate, -med_income, poverty_percent, -median_age_male, -median_age_female, pct_no_hs18_24, pct_hs18_24, pct_bach_deg18_24, pct_hs25_over, pct_bach_deg25_over, pct_employed16_over, pct_unemployed16_over, pct_public_coverage_alone, pct_white.
+
+```{r}
+raw_data2 <- 
+  mutate(raw_data1, age = pct_hs25_over + pct_bach_deg25_over)
+
+mult.fit <- lm(target_death_rate ~ incidence_rate + poverty_percent + median_age_male + age + pct_employed16_over + pct_white, data = raw_data2)
+
+summary(mult.fit)
+```
 
