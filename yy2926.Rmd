@@ -63,3 +63,28 @@ dot5 = ggplot(raw_data2, aes(x  = raw_data2$pct_unemployed16_over, y =raw_data2$
 dot6 = ggplot(raw_data2, aes(x  = raw_data2$pct_public_coverage_alone, y =raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_public_coverage_alone")
 grid.arrange(dot1, dot2, dot3, dot4, dot5, dot6, ncol=2)
 ```
+
+
+
+```{r}
+## take out outliers 
+raw_data3 = raw_data2[-c(1490),]
+raw_data3 = raw_data3[-c(282),]
+## Two rows are outliers
+```
+
+```{r}
+## Plot new datasets with no outliers
+dot1 = ggplot(raw_data3, aes(x  = raw_data3$target_death_rate, y =raw_data3$target_death_rate)) + geom_point() + labs(title = "pct_target_death_rate")
+dot2 = ggplot(raw_data3, aes(x  = raw_data3$incidence_rate, y =raw_data3$target_death_rate)) + geom_point() + labs(title = "pct_incidence_rate")
+dot3 = ggplot(raw_data3, aes(x  = raw_data3$poverty_percent, y =raw_data3$target_death_rate)) + geom_point() + labs(title = "pct_poverty_percent")
+dot4 = ggplot(raw_data3, aes(x  = raw_data3$pct_bach_deg25_over, y =raw_data3$target_death_rate)) + geom_point() + labs(title = "pct_pct_bach_deg25_over")
+dot5 = ggplot(raw_data3, aes(x  = raw_data3$pct_unemployed16_over, y =raw_data3$target_death_rate)) + geom_point() + labs(title = "pct_unemployed16_over")
+dot6 = ggplot(raw_data3, aes(x  = raw_data3$pct_public_coverage_alone, y =raw_data3$target_death_rate)) + geom_point() + labs(title = "pct_public_coverage_alone")
+grid.arrange(dot1, dot2, dot3, dot4, dot5, dot6, ncol=2)
+```
+
+```{r}
+## Descriptive statistics
+summary(raw_data3)
+```
