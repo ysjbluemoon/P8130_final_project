@@ -1,0 +1,28 @@
+---
+title: "yy2926"
+author: "Yuxin"
+date: "2018.12.9"
+output: github_document
+---
+
+```{r}
+library(broom)
+library(dplyr)
+library(tidyverse)
+library(patchwork)
+library("leaps")
+library(faraway)
+library(boot)
+```
+
+```{r}
+raw_data <- read_csv("./Data/Cancer_Registry.csv")
+raw_data = janitor::clean_names(raw_data)
+raw_data1 = raw_data %>% 
+  select(-binned_inc) %>% 
+  separate(geography, c("county", "state"), sep = ",") %>% 
+  mutate(county = as.factor(county), 
+         state = as.factor(state),
+         avg_ann_count = avg_ann_count / pop_est2015*100000) %>% 
+  select(target_death_rate, avg_ann_count, everything())
+```
