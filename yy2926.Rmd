@@ -26,3 +26,7 @@ raw_data1 = raw_data %>%
          avg_ann_count = avg_ann_count / pop_est2015*100000) %>% 
   select(target_death_rate, avg_ann_count, everything())
 ```
+
+```{r}
+sapply(raw_data1, function(x) sum(is.na(x)))
+```
