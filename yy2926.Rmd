@@ -13,6 +13,8 @@ library(patchwork)
 library("leaps")
 library(faraway)
 library(boot)
+library(ggplot2)
+library("gridExtra")
 ```
 
 ```{r}
@@ -34,7 +36,18 @@ sapply(raw_data1, function(x) sum(is.na(x)))
 ```{r}
 ## Choose possible variables for our model
 raw_data2 = raw_data1 %>% 
-  select(target_death_rate, avg_ann_count, incidence_rate, med_income, poverty_percent, median_age_male, median_age_female, pct_bach_deg25_over, pct_unemployed16_over, pct_public_coverage_alone)
+  select(target_death_rate, incidence_rate, poverty_percent,  pct_bach_deg25_over, pct_unemployed16_over, pct_public_coverage_alone)
 sapply(raw_data2, function(x) sum(is.na(x)))
 ## No missing values
+```
+
+```{r}
+## Visualization of predictors to find outliers
+histogram1 = ggplot(raw_data2, aes(x  = raw_data2$target_death_rate)) + geom_histogram() + labs(title = "pct_target_death_rate")
+histogram2 = ggplot(raw_data2, aes(x  = raw_data2$incidence_rate)) + geom_histogram() + labs(title = "pct_incidence_rate")
+histogram3 = ggplot(raw_data2, aes(x  = raw_data2$poverty_percent)) + geom_histogram() + labs(title = "pct_poverty_percent")
+histogram4 = ggplot(raw_data2, aes(x  = raw_data2$pct_bach_deg25_over)) + geom_histogram() + labs(title = "pct_pct_bach_deg25_over")
+histogram5 = ggplot(raw_data2, aes(x  = raw_data2$pct_unemployed16_over)) + geom_histogram() + labs(title = "pct_unemployed16_over")
+histogram6 = ggplot(raw_data2, aes(x  = raw_data2$pct_public_coverage_alone)) + geom_histogram() + labs(title = "pct_public_coverage_alone")
+grid.arrange(histogram1, histogram2, histogram3, histogram4, histogram5,histogram6, ncol=2)
 ```
