@@ -30,3 +30,11 @@ raw_data1 = raw_data %>%
 ```{r}
 sapply(raw_data1, function(x) sum(is.na(x)))
 ```
+
+```{r}
+## Choose possible variables for our model
+raw_data2 = raw_data1 %>% 
+  select(target_death_rate, avg_ann_count, incidence_rate, med_income, poverty_percent, median_age_male, median_age_female, pct_bach_deg25_over, pct_unemployed16_over, pct_public_coverage_alone)
+sapply(raw_data2, function(x) sum(is.na(x)))
+## No missing values
+```
