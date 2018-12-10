@@ -50,4 +50,16 @@ histogram4 = ggplot(raw_data2, aes(x  = raw_data2$pct_bach_deg25_over)) + geom_h
 histogram5 = ggplot(raw_data2, aes(x  = raw_data2$pct_unemployed16_over)) + geom_histogram() + labs(title = "pct_unemployed16_over")
 histogram6 = ggplot(raw_data2, aes(x  = raw_data2$pct_public_coverage_alone)) + geom_histogram() + labs(title = "pct_public_coverage_alone")
 grid.arrange(histogram1, histogram2, histogram3, histogram4, histogram5,histogram6, ncol=2)
+histogram1 = ggplot(raw_data2, aes(x  = raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_target_death_rate")
+```
+
+```{r}
+## dotplot to make outliers more distinct
+dot1 = ggplot(raw_data2, aes(x  = raw_data2$target_death_rate, y =raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_target_death_rate")
+dot2 = ggplot(raw_data2, aes(x  = raw_data2$incidence_rate, y =raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_incidence_rate")
+dot3 = ggplot(raw_data2, aes(x  = raw_data2$poverty_percent, y =raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_poverty_percent")
+dot4 = ggplot(raw_data2, aes(x  = raw_data2$pct_bach_deg25_over, y =raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_pct_bach_deg25_over")
+dot5 = ggplot(raw_data2, aes(x  = raw_data2$pct_unemployed16_over, y =raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_unemployed16_over")
+dot6 = ggplot(raw_data2, aes(x  = raw_data2$pct_public_coverage_alone, y =raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_public_coverage_alone")
+grid.arrange(dot1, dot2, dot3, dot4, dot5, dot6, ncol=2)
 ```
