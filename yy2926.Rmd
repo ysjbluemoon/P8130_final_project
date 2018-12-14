@@ -15,6 +15,7 @@ library(faraway)
 library(boot)
 library(ggplot2)
 library("gridExtra")
+library(mgcv)
 ```
 
 ```{r}
@@ -87,4 +88,32 @@ grid.arrange(dot1, dot2, dot3, dot4, dot5, dot6, ncol=2)
 ```{r}
 ## Descriptive statistics
 summary(raw_data3)
+```
+
+```{r}
+mult.fit1 <- lm(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over , data = raw_data2)
+summary(mult.fit1)
+## Cook distance
+stu_res<-rstandard(mult.fit1)
+outliers_y<-stu_res[abs(stu_res)>2.5]
+
+# Measures of influence:
+# Gives DFFITS, Cook's Distance, Hat diagonal elements, and others.
+
+influence.measures(mult.fit1)
+
+# Look at the Cook's distance lines and notice obs 5 and 28 as potential Y outliesrs / influential points
+
+par(mfrow=c(2,2))
+plot(mult.fit1)
+```
+
+## We have potential outliers, however the outlier is not influential so we decide to keep it.
+
+
+```{r}
+gam1 <- gam(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over , data = raw_data2)
+summary(gam1)
+par(mfrow = c(1,5))
+
 ```
