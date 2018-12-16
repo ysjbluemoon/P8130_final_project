@@ -633,3 +633,9 @@ mult.fit <- lm(target_death_rate ~ incidence_rate + poverty_percent + median_age
 summary(mult.fit)
 ```
 
+
+```{r}
+mult.fit <- lm(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over + age, data = raw_data2)
+summary(mult.fit)
+```
+
