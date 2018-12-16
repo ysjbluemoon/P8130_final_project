@@ -16,6 +16,7 @@ library("leaps")
 library(faraway)
 library(caret)
 library(boot)
+library(MPV) 
 ```
 
 
@@ -267,6 +268,123 @@ mult.fit <- lm(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_
 summary(mult.fit)
 ```
 
+## Predictive capability of the model
+
+###K-fold Cross Validation (CV)
+##### Use 5-fold validation and create the training sets
+```{r}
+set.seed(2)
+# Use 5-fold validation and create the training sets
+
+data_train <- trainControl(method = "cv", number = 5)
+
+# Fit the 4-variables model
+model_caret <- train(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over, data = raw_data2,
+                   trControl = data_train,
+                   method = 'lm',
+                   na.action = na.pass)
+  
+# Model predictions using 9 parts of the data fro training 
+model_caret
+
+#Rsquared - good % variantion acconted for
+
+# Model coefficients
+model_caret$finalModel
+
+# Examine model prediction for each fold
+model_caret$resample
+
+# Look at standard deviation around the Mean Square Error value by examining the Root Mean Square Error from each fold.
+sd(model_caret$resample$RMSE^2)
+
+```
+
+##### Use 10-fold validation and create the training sets
+```{r}
+set.seed(2)
+# Use 10-fold validation and create the training sets
+
+data_train1 <- trainControl(method = "cv", number = 10)
+
+# Fit the 4-variables model
+model_caret1 <- train(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over, data = raw_data2,
+                   trControl = data_train1,
+                   method = 'lm',
+                   na.action = na.pass)
+  
+# Model predictions using 9 parts of the data fro training 
+model_caret1
+
+#Rsquared - good % variantion acconted for
+
+# Model coefficients
+model_caret1$finalModel
+
+# Examine model prediction for each fold
+model_caret1$resample
+
+# Look at standard deviation around the Mean Square Error value by examining the Root Mean Square Error from each fold.
+sd(model_caret1$resample$RMSE^2)
+
+
+
+# Let's look at the model using all data, no CV
+full_model <- lm(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over , data = raw_data2)
+summary(full_model)
+
+# Full data had an Rsquared=0.4704
+```
+
+```{r}
+summary(model_caret$resample$RMSE^2)
+summary(model_caret1$resample$RMSE^2)
+
+
+par(mfrow = c(1,2))
+boxplot(model_caret$resample$RMSE^2, main = "MSE of 5 fold CV", ylim = c(330, 500))
+boxplot(model_caret1$resample$RMSE^2, main = "MSE of 10 fold CV", ylim = c(330, 500))
+```
+
+
+### Bootstrap to assess the variability of model estimates: b0 and b1
+```{r}
+boot.fn<-function(data, index){
+	return(coef(lm(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over , data = raw_data2, subset=index)))}
+
+# Our usual regression, no bootstrap yet
+boot.fn(raw_data2,1:3047)
+
+
+# Compute the estimates by sampling with replacement
+# Sample chooses 3047 observations from 3047, with replacement
+# Might have duplicates
+set.seed(1)
+
+# One draw
+boot.fn(raw_data2,sample(3047,3047,replace=T))
+
+# Use function boot() to repeat the sampling 10000 times.
+# Repeat 10000 times to get the estimates, SEs ad bias
+
+boot(raw_data2, boot.fn, 10000)
+
+```
+
+
+###Model validation: criteria  
+```{r}
+newsummary <- function(model)
+{
+    list('coefs'    = round(t(summary(model)$coef[, 1:2]), 4),
+         'criteria' = cbind('SSE'   = anova(model)["Residuals", "Sum Sq"],
+                            'PRESS' = PRESS(model),
+                            'MSE'   = anova(model)["Residuals", "Mean Sq"],
+                            'Rsq'   = summary(model)$adj.r.squared))
+}
+
+newsummary(lm(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over , data = raw_data2))
+```
 
 
 
