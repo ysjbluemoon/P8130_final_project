@@ -1,5 +1,5 @@
 ---
-title: "Sy2824"
+title: "Group 7 final project"
 output: html_document
 ---
 
@@ -7,6 +7,21 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(plotly)
+library(broom)
+library(dplyr)
+library(patchwork)
+library("leaps")
+library(faraway)
+library(caret)
+library(boot)
+library(MPV) 
+library(broom)
+library("leaps")
+library(boot)
+library(ggplot2)
+library("gridExtra")
+library(mgcv)
+library(gamclass)
 ```
 
 ## Exploratory of variables
@@ -95,4 +110,493 @@ cancer_df %>%
 lm(target_death_rate ~ avg_ann_count * pop_est2015, data = cancer_df) %>% 
   summary()
 ```
+
+
+
+```{r}
+raw_data <- read_csv("./Data/Cancer_Registry.csv")
+raw_data = janitor::clean_names(raw_data)
+raw_data1 = raw_data %>% 
+  select(-binned_inc) %>% 
+  separate(geography, c("county", "state"), sep = ",") %>% 
+  mutate(county = as.factor(county), 
+         state = as.factor(state),
+         avg_ann_count = avg_ann_count / pop_est2015*100000) %>% 
+  select(target_death_rate, avg_ann_count, everything())
+
+res <- cor(raw_data1 %>% select(-county, -state))
+round(res, 3)
+```
+
+```{r}
+summary(raw_data1$pct_employed16_over) # contains 152 NA's
+summary(raw_data1$pct_unemployed16_over)
+summary(raw_data1$pct_private_coverage)
+summary(raw_data1$pct_private_coverage_alone) # get rid of this variable! Contains 609 NA's
+summary(raw_data1$pct_emp_priv_coverage)
+summary(raw_data1$pct_public_coverage)
+summary(raw_data1$pct_public_coverage_alone)
+
+histogram1 = ggplot(raw_data1, aes(x  = raw_data1$pct_employed16_over)) + geom_histogram() + labs(title = "Percent ages 16+ employed")
+
+
+histogram2 = ggplot(raw_data1, aes(x  = raw_data1$pct_unemployed16_over)) + geom_histogram() + labs(title = "Percent ages 16+ unemployed")
+
+
+histogram3 = ggplot(raw_data1, aes(x  = raw_data1$pct_private_coverage)) + geom_histogram() + labs(title = "Percent private health coverage")
+
+
+histogram4 = ggplot(raw_data1, aes(x  = raw_data1$pct_private_coverage_alone)) + geom_histogram() + labs(title = "Percent private health coverage alone")
+
+
+histogram5 = ggplot(raw_data1, aes(x  = raw_data1$pct_emp_priv_coverage)) + geom_histogram() + labs(title = "Percent employee-provided private health coverage")
+
+
+histogram6 = ggplot(raw_data1, aes(x  = raw_data1$pct_public_coverage)) + geom_histogram() + labs(title = "Percent government-provided health coverage")
+
+
+histogram7 = ggplot(raw_data1, aes(x  = raw_data1$pct_public_coverage_alone)) + geom_histogram() + labs(title = "Percent government-provided health coverage alone")
+
+
+
+(histogram1 + histogram2)
+(histogram3 + histogram4)
+(histogram5 + histogram6)/(histogram7)
+
+reg1 = lm(target_death_rate~pct_employed16_over, data = raw_data1)
+reg2 = lm(target_death_rate~pct_unemployed16_over, data = raw_data1)
+reg3 = lm(target_death_rate~pct_private_coverage, data = raw_data1)
+reg4 = lm(target_death_rate~pct_private_coverage_alone, data = raw_data1)
+reg5 = lm(target_death_rate~pct_emp_priv_coverage, data = raw_data1)
+reg6 = lm(target_death_rate~pct_public_coverage, data = raw_data1)
+reg7 = lm(target_death_rate~pct_public_coverage_alone , data = raw_data1)
+
+plot(raw_data1$pct_employed16_over, raw_data1$target_death_rate)
+abline(reg1,lwd = 2,col = 2)
+plot(raw_data1$pct_unemployed16_over, raw_data1$target_death_rate)
+abline(reg2,lwd = 2,col = 2)
+plot(raw_data1$pct_private_coverage, raw_data1$target_death_rate)
+abline(reg3,lwd = 2,col = 2)
+plot(raw_data1$pct_private_coverage_alone, raw_data1$target_death_rate)
+abline(reg4,lwd = 2,col = 2)
+plot(raw_data1$pct_emp_priv_coverage, raw_data1$target_death_rate)
+abline(reg5,lwd = 2,col = 2)
+plot(raw_data1$pct_public_coverage, raw_data1$target_death_rate)
+abline(reg6,lwd = 2,col = 2)
+plot(raw_data1$pct_public_coverage_alone, raw_data1$target_death_rate)
+abline(reg7,lwd = 2,col = 2)
+
+```
+
+```{r}
+raw_data2 = raw_data1 %>% 
+  #mutate(interaction1 = med_income * poverty_percent) %>% 
+  select(target_death_rate, avg_ann_count, incidence_rate, med_income, poverty_percent, median_age_male, median_age_female, pct_bach_deg25_over, pct_unemployed16_over, pct_public_coverage_alone)
+
+#############################################################################
+# Backward elimination: take out non-significant variables 'one at a time'  #
+# starting with the highest p-value                                         #
+#############################################################################
+
+reg = lm(target_death_rate~., data = raw_data2)
+summary(reg)
+
+# No Median age of female county residents
+step1<-update(reg, . ~ . -median_age_female)
+summary(step1)
+
+# No Median income per county
+step2<-update(step1, . ~ . -med_income)
+summary(step2)
+
+# No Mean number of reported cases of cancer diagnosed annually
+step3<-update(step2, . ~ . -avg_ann_count)
+summary(step3)
+
+# No Median age of male county residents
+step4<-update(step3, . ~ . -median_age_male)
+summary(step4)
+
+
+############################################################################
+#  Stepwise regreession                                                    #   
+# 'Step' function uses AIC criterion for var selection and the default     #
+#  option is 'backward'.                                                   #
+#  Step is a simplified version of stepAIC()                               #
+############################################################################
+
+
+mult.fit <- lm(target_death_rate~., data = raw_data2)
+step(mult.fit, direction = 'both')
+
+
+#########################################################################################
+# Forward elimination: Reversed backward elimination starting with the lowest p-value   #                                                            
+#########################################################################################
+
+
+### Step 1:  Fit simple linear regressions for all variables,look for the variable with lowest p-value
+fit1 <- lm(target_death_rate ~ avg_ann_count, data=raw_data2)
+tidy(fit1)
+fit2 <- lm(target_death_rate ~ incidence_rate, data=raw_data2)
+tidy(fit2)
+fit3 <- lm(target_death_rate ~ med_income, data=raw_data2)
+tidy(fit3)
+fit4 <- lm(target_death_rate ~ poverty_percent, data=raw_data2)
+tidy(fit4)
+fit5 <- lm(target_death_rate ~ median_age_male, data=raw_data2)
+tidy(fit5)
+fit6 <- lm(target_death_rate ~ median_age_female, data=raw_data2)
+tidy(fit6)
+fit7 <- lm(target_death_rate ~ pct_bach_deg25_over, data=raw_data2)
+tidy(fit7)
+fit8 <- lm(target_death_rate ~ pct_unemployed16_over, data=raw_data2)
+tidy(fit8)
+fit9 <- lm(target_death_rate ~ pct_public_coverage_alone, data=raw_data2)
+tidy(fit9)
+
+
+# Enter first the one with the lowest p-value: pct_bach_deg25_over
+forward1<-lm(target_death_rate~pct_bach_deg25_over , data=raw_data2)
+tidy(forward1)
+
+### Step 2: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward1, . ~ . +avg_ann_count)
+tidy(fit1)
+fit2 <- update(forward1, . ~ . +incidence_rate)
+tidy(fit2)
+fit3 <- update(forward1, . ~ . +med_income)
+tidy(fit3)
+fit4 <- update(forward1, . ~ . +poverty_percent)
+tidy(fit4)
+fit5 <- update(forward1, . ~ . +median_age_male)
+tidy(fit5)
+fit6 <- update(forward1, . ~ . +median_age_female)
+tidy(fit6)
+fit7 <- update(forward1, . ~ . +pct_unemployed16_over)
+tidy(fit7)
+fit8 <- update(forward1, . ~ . +pct_public_coverage_alone)
+tidy(fit8)
+
+
+
+# Enter the one with the lowest p-value: incidence_rate
+forward2 <- update(forward1, . ~ . + incidence_rate)
+tidy(forward2)
+
+### Step 3: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward2, . ~ . +avg_ann_count)
+tidy(fit1)
+fit2 <- update(forward2, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward2, . ~ . +poverty_percent)
+tidy(fit3)
+fit4 <- update(forward2, . ~ . +median_age_male)
+tidy(fit4)
+fit5 <- update(forward2, . ~ . +median_age_female)
+tidy(fit5)
+fit6 <- update(forward2, . ~ . +pct_unemployed16_over)
+tidy(fit6)
+fit7 <- update(forward2, . ~ . +pct_public_coverage_alone)
+tidy(fit7)
+
+
+# Enter the one with the lowest p-value: poverty_percent
+forward3 <- update(forward2, . ~ . + poverty_percent)
+tidy(forward3)
+
+### Step 4: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward3, . ~ . +avg_ann_count)
+tidy(fit1)
+fit2 <- update(forward3, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward3, . ~ . +median_age_male)
+tidy(fit3)
+fit4 <- update(forward3, . ~ . +median_age_female)
+tidy(fit4)
+fit5 <- update(forward3, . ~ . +pct_unemployed16_over)
+tidy(fit5)
+fit6 <- update(forward3, . ~ . +pct_public_coverage_alone)
+tidy(fit6)
+
+
+# Enter the one with the lowest p-value: pct_unemployed16_over 
+forward4 <- update(forward3, . ~ . + pct_unemployed16_over )
+tidy(forward4)
+
+
+### Step 5: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward4, . ~ . +avg_ann_count)
+tidy(fit1)
+fit2 <- update(forward4, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward4, . ~ . +median_age_male)
+tidy(fit3)
+fit4 <- update(forward4, . ~ . +median_age_female)
+tidy(fit4)
+fit5 <- update(forward4, . ~ . +pct_public_coverage_alone)
+tidy(fit5)
+
+# Enter the one with the lowest p-value: pct_public_coverage_alone
+forward5 <- update(forward4, . ~ . + pct_public_coverage_alone )
+tidy(forward5)
+
+
+### Step 6: Enter the one with the lowest p-value in the rest 
+fit1 <- update(forward5, . ~ . +avg_ann_count)
+tidy(fit1)
+fit2 <- update(forward5, . ~ . +med_income)
+tidy(fit2)
+fit3 <- update(forward5, . ~ . +median_age_male)
+tidy(fit3)
+fit4 <- update(forward5, . ~ . +median_age_female)
+tidy(fit4)
+
+
+# P-value of all new added variables are larger than 0.15, which means that they 
+# are not significant predictor, and we stop here.
+
+# The model we obtained is target_death_rate~population + murder + hs_grad + frost
+mult.fit <- lm(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over , data = raw_data2)
+summary(mult.fit)
+```
+
+## Predictive capability of the model
+
+###K-fold Cross Validation (CV)
+##### Use 5-fold validation and create the training sets
+```{r}
+set.seed(2)
+# Use 5-fold validation and create the training sets
+
+data_train <- trainControl(method = "cv", number = 5)
+
+# Fit the 4-variables model
+model_caret <- train(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over, data = raw_data2,
+                   trControl = data_train,
+                   method = 'lm',
+                   na.action = na.pass)
+  
+# Model predictions using 9 parts of the data fro training 
+model_caret
+
+#Rsquared - good % variantion acconted for
+
+# Model coefficients
+model_caret$finalModel
+
+# Examine model prediction for each fold
+model_caret$resample
+
+# Look at standard deviation around the Mean Square Error value by examining the Root Mean Square Error from each fold.
+sd(model_caret$resample$RMSE^2)
+
+```
+
+##### Use 10-fold validation and create the training sets
+```{r}
+set.seed(2)
+# Use 10-fold validation and create the training sets
+
+data_train1 <- trainControl(method = "cv", number = 10)
+
+# Fit the 4-variables model
+model_caret1 <- train(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over, data = raw_data2,
+                   trControl = data_train1,
+                   method = 'lm',
+                   na.action = na.pass)
+  
+# Model predictions using 9 parts of the data fro training 
+model_caret1
+
+#Rsquared - good % variantion acconted for
+
+# Model coefficients
+model_caret1$finalModel
+
+# Examine model prediction for each fold
+model_caret1$resample
+
+# Look at standard deviation around the Mean Square Error value by examining the Root Mean Square Error from each fold.
+sd(model_caret1$resample$RMSE^2)
+
+
+
+# Let's look at the model using all data, no CV
+full_model <- lm(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over , data = raw_data2)
+summary(full_model)
+
+# Full data had an Rsquared=0.4704
+```
+
+```{r}
+summary(model_caret$resample$RMSE^2)
+summary(model_caret1$resample$RMSE^2)
+
+
+par(mfrow = c(1,2))
+boxplot(model_caret$resample$RMSE^2, main = "MSE of 5 fold CV", ylim = c(330, 500))
+boxplot(model_caret1$resample$RMSE^2, main = "MSE of 10 fold CV", ylim = c(330, 500))
+```
+
+
+### Bootstrap to assess the variability of model estimates: b0 and b1
+```{r}
+boot.fn<-function(data, index){
+	return(coef(lm(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over , data = raw_data2, subset=index)))}
+
+# Our usual regression, no bootstrap yet
+boot.fn(raw_data2,1:3047)
+
+
+# Compute the estimates by sampling with replacement
+# Sample chooses 3047 observations from 3047, with replacement
+# Might have duplicates
+set.seed(1)
+
+# One draw
+boot.fn(raw_data2,sample(3047,3047,replace=T))
+
+# Use function boot() to repeat the sampling 10000 times.
+# Repeat 10000 times to get the estimates, SEs ad bias
+
+boot(raw_data2, boot.fn, 10000)
+
+```
+
+
+###Model validation: criteria  
+```{r}
+newsummary <- function(model)
+{
+    list('coefs'    = round(t(summary(model)$coef[, 1:2]), 4),
+         'criteria' = cbind('SSE'   = anova(model)["Residuals", "Sum Sq"],
+                            'PRESS' = PRESS(model),
+                            'MSE'   = anova(model)["Residuals", "Mean Sq"],
+                            'Rsq'   = summary(model)$adj.r.squared))
+}
+
+newsummary(lm(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over , data = raw_data2))
+```
+
+```{r}
+raw_data <- read_csv("./Data/Cancer_Registry.csv")
+raw_data = janitor::clean_names(raw_data)
+raw_data1 = raw_data %>% 
+  select(-binned_inc) %>% 
+  separate(geography, c("county", "state"), sep = ",") %>% 
+  mutate(county = as.factor(county), 
+         state = as.factor(state),
+         avg_ann_count = avg_ann_count / pop_est2015*100000) %>% 
+  select(target_death_rate, avg_ann_count, everything())
+```
+
+```{r}
+sapply(raw_data1, function(x) sum(is.na(x)))
+```
+
+```{r}
+## Choose possible variables for our model
+raw_data2 = raw_data1 %>% 
+  select(target_death_rate, incidence_rate, poverty_percent,  pct_bach_deg25_over, pct_unemployed16_over, pct_public_coverage_alone)
+sapply(raw_data2, function(x) sum(is.na(x)))
+## No missing values
+```
+
+```{r}
+## Visualization of predictors to find outliers
+histogram1 = ggplot(raw_data2, aes(x  = raw_data2$target_death_rate)) + geom_histogram() + labs(title = "pct_target_death_rate")
+histogram2 = ggplot(raw_data2, aes(x  = raw_data2$incidence_rate)) + geom_histogram() + labs(title = "pct_incidence_rate")
+histogram3 = ggplot(raw_data2, aes(x  = raw_data2$poverty_percent)) + geom_histogram() + labs(title = "pct_poverty_percent")
+histogram4 = ggplot(raw_data2, aes(x  = raw_data2$pct_bach_deg25_over)) + geom_histogram() + labs(title = "pct_pct_bach_deg25_over")
+histogram5 = ggplot(raw_data2, aes(x  = raw_data2$pct_unemployed16_over)) + geom_histogram() + labs(title = "pct_unemployed16_over")
+histogram6 = ggplot(raw_data2, aes(x  = raw_data2$pct_public_coverage_alone)) + geom_histogram() + labs(title = "pct_public_coverage_alone")
+grid.arrange(histogram1, histogram2, histogram3, histogram4, histogram5,histogram6, ncol=2)
+histogram1 = ggplot(raw_data2, aes(x  = raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_target_death_rate")
+```
+
+```{r}
+## dotplot to make outliers more distinct
+dot1 = ggplot(raw_data2, aes(x  = raw_data2$target_death_rate, y =raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_target_death_rate")
+dot2 = ggplot(raw_data2, aes(x  = raw_data2$incidence_rate, y =raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_incidence_rate")
+dot3 = ggplot(raw_data2, aes(x  = raw_data2$poverty_percent, y =raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_poverty_percent")
+dot4 = ggplot(raw_data2, aes(x  = raw_data2$pct_bach_deg25_over, y =raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_pct_bach_deg25_over")
+dot5 = ggplot(raw_data2, aes(x  = raw_data2$pct_unemployed16_over, y =raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_unemployed16_over")
+dot6 = ggplot(raw_data2, aes(x  = raw_data2$pct_public_coverage_alone, y =raw_data2$target_death_rate)) + geom_point() + labs(title = "pct_public_coverage_alone")
+grid.arrange(dot1, dot2, dot3, dot4, dot5, dot6, ncol=2)
+```
+
+
+
+```{r}
+## take out outliers 
+raw_data3 = raw_data2[-c(1490),]
+raw_data3 = raw_data3[-c(282),]
+## Two rows are outliers
+```
+
+```{r}
+## Plot new datasets with no outliers
+dot1 = ggplot(raw_data3, aes(x  = raw_data3$target_death_rate, y =raw_data3$target_death_rate)) + geom_point() + labs(title = "pct_target_death_rate")
+dot2 = ggplot(raw_data3, aes(x  = raw_data3$incidence_rate, y =raw_data3$target_death_rate)) + geom_point() + labs(title = "pct_incidence_rate")
+dot3 = ggplot(raw_data3, aes(x  = raw_data3$poverty_percent, y =raw_data3$target_death_rate)) + geom_point() + labs(title = "pct_poverty_percent")
+dot4 = ggplot(raw_data3, aes(x  = raw_data3$pct_bach_deg25_over, y =raw_data3$target_death_rate)) + geom_point() + labs(title = "pct_pct_bach_deg25_over")
+dot5 = ggplot(raw_data3, aes(x  = raw_data3$pct_unemployed16_over, y =raw_data3$target_death_rate)) + geom_point() + labs(title = "pct_unemployed16_over")
+dot6 = ggplot(raw_data3, aes(x  = raw_data3$pct_public_coverage_alone, y =raw_data3$target_death_rate)) + geom_point() + labs(title = "pct_public_coverage_alone")
+grid.arrange(dot1, dot2, dot3, dot4, dot5, dot6, ncol=2)
+```
+
+```{r}
+## Descriptive statistics
+summary(raw_data3)
+```
+
+```{r}
+mult.fit1 <- lm(target_death_rate~pct_bach_deg25_over + incidence_rate + poverty_percent + pct_public_coverage_alone + pct_unemployed16_over , data = raw_data2)
+summary(mult.fit1)
+## Cook distance
+stu_res<-rstandard(mult.fit1)
+outliers_y<-stu_res[abs(stu_res)>2.5]
+
+# Measures of influence:
+# Gives DFFITS, Cook's Distance, Hat diagonal elements, and others.
+
+influence.measures(mult.fit1)
+
+# Look at the Cook's distance lines and notice obs 5 and 28 as potential Y outliesrs / influential points
+
+par(mfrow=c(2,2))
+plot(mult.fit1)
+```
+
+## We have potential outliers, however the outlier is not influential so we decide to keep it.
+
+
+```{r}
+gam1 <- gam(target_death_rate~s(pct_bach_deg25_over) + s(incidence_rate) + s(poverty_percent) + s(pct_public_coverage_alone) + s(pct_unemployed16_over) , data = raw_data2)
+gam2 <- gam(target_death_rate~s(pct_bach_deg25_over) + s(incidence_rate) + s(poverty_percent) + s(pct_public_coverage_alone) + s(pct_unemployed16_over) , family=Gamma(link=log), data = raw_data2)
+summary(gam1)
+summary(gam2)
+par(mfrow = c(1,5))
+plot(gam1)
+gam3 <- gam(target_death_rate~s(pct_bach_deg25_over) + s(incidence_rate) + s(poverty_percent) + s(pct_public_coverage_alone) + s(pct_unemployed16_over) , method = "GACV.Cp",data = raw_data2)
+summary(gam3)
+gam4 <- gam(target_death_rate~s(pct_bach_deg25_over) + s(incidence_rate) + s(poverty_percent) + s(pct_public_coverage_alone) + s(pct_unemployed16_over) + s(med_income) +s(pct_white) +s(pct_white)+s(pct_black)+s(pct_asian) +s(median_age_female), data = raw_data1)
+summary(gam4)
+```
+
+```{r}
+RSS <- c(crossprod(gam2$residuals))
+MSE <- RSS / length(gam2$residuals)
+RSS1 <- c(crossprod(gam4$residuals))
+MSE1 <- RSS / length(gam4$residuals)
+MSE1
+
+ggplot(raw_data3, aes(x = poverty_percent, y = target_death_rate)) + 
+  geom_point() + 
+  labs(title = "pct_poverty_percent", 
+       x = "Incident rate", 
+       y = "Target death")
+```
+
 
